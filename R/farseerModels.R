@@ -7,12 +7,12 @@ farseer.models <- function(farseerDataSets){
         value
 }
 
-farseer.models.create <- function(farseerDataSet, plot, test){
-        
+farseer.models.create <- function(formula, farseerDataSet, additional_targets, test){
+  return("dummy create")    
 }
 
-farseer.models.retrain <- function(farseerDataSet, farseerModels, plot, test){
-  
+farseer.models.retrain <- function(formula, farseerDataSet, additional_targets, farseerModels, test){
+  return("dummy retrain")
 }
 
 #new generic functions

@@ -1,23 +1,26 @@
 #'farseerDataSet - S3 class for creating and storing factorized and normalized datasets
 
 #' constructor for a farseerDataSet
+#'
 #' @param dataFrame a data.frame containing data for modeling, without target variables
+#'
+#' functions: \link{factorize.data.set}
 #' @return list
 #' $original: original data.frame
 #' $factorized: all factors converted to 0 and 1
-#' $normalized: all values are ranged 0-1. See @method factorize.data.frame
-#' 
+#' $normalized: all values are ranged 0-1. See factorize.data.frame
+#'
 #' @author Kornel Skitek 2020
 farseerDataSet <- function(dataFrame){
         originalData <- dataFrame
         factorizedData <- factorize(dataFrame)
         normalizedData <- normalize(factorizedData)
-        
+
         #create denormalization vector
         minVector <- sapply(factorizedData, min)
         maxVector <- sapply(factorizedData, max)
         denormalizeVector <- (maxVector - minVector) + minVector
-        
+
         creationDate <- Sys.Date()
         value = list(original = originalData, factorized = factorizedData, normalized = normalizedData, timestamp = creationDate, denormalization = denormalizeVector)
         attr(value, "class") <- "farseerDataSet"
@@ -26,55 +29,52 @@ farseerDataSet <- function(dataFrame){
 
 #generic functions
 
-#' factorize
-#' 
 #' generic function for factorizing - changind factor levels into numerical 0 or 1 values
 #'
 #' @param obj - object to be factorized
-#' 
-#' see @method factorize.data.frame for details
+#'
+#' see factorize.data.frame for details
 #' @export
 factorize <- function(obj){
         UseMethod("factorize")
 }
 
-#' normalize
-#' 
 #' generic function for normalizing
 #'
-#' @param obj 
+#' @param obj
 #'
-#' see @method normalize.data.frame for details
+#' see normalize.data.frame for details
 #' @export
 normalize <- function(obj){
         UseMethod("normalize")
 }
 
-
-#' @method 
-#' This function converts all factors to numeric values 0,1.
+#' factorize.data.frame
+#'
+#' This function converts all factors to numeric values 0 and 1.
+#'
 #' For every factor level save one a new variable is created {name_factor_name}
 #' last factor level does not have to be included, as if all the values are 0 it means this case belongs to the group
-#' @example 
-#' 
+#' @param dataFrame a dataFrame object with data to be factorized. Non-Factor data will be left unchanged.
+#' @examples
+#' \preformatted{
 #'  example <- data.frame(Patient_Number = c(1:5), Sex = c("male", "female", "diverse", NA , "male"))
 #'  factorize.data.frame(example)
-#'  
-#'   >example
+#'  >example
 #'     Patient_Number     Sex
 #'     1              1    male
 #'     2              2  female
 #'     3              3 diverse
 #'     4              4    <NA>
 #'     5              5    male
-#'   > factorize.data.frame(example)
+#'  > factorize.data.frame(example)
 #'     Patient_Number Sex_diverse Sex_female
 #'     1              1           0          0
 #'     2              2           0          1
 #'     3              3           1          0
 #'     4              4          NA         NA
 #'     5              5           0          0
-#'     
+#'}
 #'@author Kornel Skitek 2020
 #'@export
 factorize.data.frame <- function(dataFrame){
@@ -99,18 +99,19 @@ factorize.data.frame <- function(dataFrame){
 #normalization
 
 #' normalize converts all the values into values of range(0,1)
+#'
 #' This allows for correct training, if the variables have very different ranges
 #' for example:
 #' if a antihypertension drug has a dosage range of 2 to 10 mg
 #' and initial mean blood pressure of our patients varies from 100 to 200
 #' the initial blood pressure will be overfitted, compared to drug dose.
 #'
-#' @param factorizedDataFrame - a data.frame factorized using @method factorize.data.frame
+#' @param dataFrame a data.frame factorized using \code{\link{factorize.data.frame}}
 #'
 #' @return data.frame
 #' @export
 normalize.data.frame <- function(dataFrame){
-        dataFrame <- as.data.frame(lapply(dataFrame, normalize.vector))     
+        dataFrame <- as.data.frame(lapply(dataFrame, normalize.vector))
         return(dataFrame)
 }
 
