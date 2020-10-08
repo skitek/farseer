@@ -1,17 +1,46 @@
 #farseerModels - S3 class for storing trained models
 
-
-farseer.models <- function(farseerDataSets){
-        value = list()
+#' farseer.models (S3 class)
+#' 
+#' Container class for models trained with farseer-package.
+#' It is a list of models
+#'  \tabular{ll}{
+#'  $linear \tab linear model \cr
+#'  $partition \tab partition tree \cr
+#'  $neural \tab neural networks
+#'  }
+#' @params farseerDataSets a farseer.data.set
+#' 
+farseer.models <- function(farseerDataFrame, mode = "create", ...){
+  if(mode == "create"){
+    value <- create(farseerDataFrame, ...)
+    }
+  else if(mode == "retrain"){
+    value <- retrain(farseerDataFrame, ...)
+  }
+  else{
+    stop("invalid mode argument")
+  }
         attr(value, "class") <- "farseerModels"
-        value
+        return(value)
 }
 
-farseer.models.create <- function(formula, farseerDataSet, additional_targets, test){
+#GENERIC FUNCTIONS
+#' create (generic)
+create <- function(obj, ...){
+  UseMethod("create")
+}
+
+#' create (farseer.data.frame)
+#' 
+#' Call of the create function on an farseer.data.frame object creates new farseer.models
+#' 
+create.farseer.data.frame <- function(farseerDataFrame, formula, additional_targets, test){
+  
   return("dummy create")    
 }
 
-farseer.models.retrain <- function(formula, farseerDataSet, additional_targets, farseerModels, test){
+retrain.farseer.data.frame <- function(farseerDataFrame, formula, additional_targets, farseerModels, test){
   return("dummy retrain")
 }
 

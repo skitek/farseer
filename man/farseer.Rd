@@ -61,17 +61,15 @@ If it remains NULL, a new set of models will be returned.}
 }
 }
 \description{
-Wrapper for easy user of the farseer package.
+Wrapper for easy usage of the farseer package.
 }
 \details{
-It generates three models, wrapped in an \code{\link{farseer.models}}-object. A linear model, neural networks
-and partition tree. Those models can be then plotted using the generic \code{plot} function.
+It generates three models, a linear model, neural networks and partition tree
+wrapped in an \code{\link{farseer.models}}-object. Those models can be then plotted using the generic \code{plot} function.
 Additionally, the \code{\link{farseer.data.frames}} are also returned for further reference.
-
-see \code{\link{farseer.models}} or \code{\link{farseer.data.frames}} for more details.
 
 Dependant and independant variables can be either provided as formula, or if all variables should be used
 one can simply place the dependant variable as last variable in \code{dataFrame}.
 If models should be created for more than one variable simultaniously, additional dependand variables
-can be specified. They will be excluded from dataFrame prior to training.
+can be specified. They will be excluded from \code{dataFrame} prior to training.
 }

@@ -1,12 +1,11 @@
 #' farseer(function)
 #' 
-#' Wrapper for easy user of the farseer package. 
+#' Wrapper for easy usage of the farseer package. 
 #' 
-#' It generates three models, wrapped in an \code{\link{farseer.models}}-object. A linear model, neural networks
-#' and partition tree. Those models can be then plotted using the generic \code{plot} function. 
+#' It generates three models, a linear model, neural networks and partition tree 
+#' wrapped in an \code{\link{farseer.models}}-object. Those models can be then plotted using the generic \code{plot} function. 
 #' Additionally, the \code{\link{farseer.data.frames}} are also returned for further reference. 
 #' 
-#' see \code{\link{farseer.models}} or \code{\link{farseer.data.frames}} for more details.
 #' 
 #' Dependant and independant variables can be either provided as formula, or if all variables should be used
 #' one can simply place the dependant variable as last variable in \code{dataFrame}. 
@@ -84,10 +83,10 @@ farseer <- function(formula = NULL, dataFrame, additional_targets = NULL, farsee
   }
   
   if(is.null(farseerModels)){
-    farseerModels <- farseer.models.create(formula, dataFrame, additional_targets, test)
+    #farseerModels <- farseer.models(farseerDataFrame, test = test)
   }
   else{
-    farseerModels <- farseer.models.retrain(formula, dataFrame, additional_targets, farseerModels, test)
+    #farseerModels <- farseer.models(dataFrame, farseerModels, test)
   }
   return(farseerModels)
 }

@@ -2,29 +2,63 @@
 
 #' constructor for a farseerDataSet
 #'
-#' @param dataFrame a data.frame containing data for modeling, without target variables
+#' @param dataFrame a data.frame containing data for modeling
 #'
 #' functions: \link{factorize.data.set}
 #' @return list
-#' $original: original data.frame
-#' $factorized: all factors converted to 0 and 1
-#' $normalized: all values are ranged 0-1. See factorize.data.frame
-#'
+#' $data: original data.frame
+#' $factorised: character vector of columns containing vectors converted to numerical values 0,1 See \code{\link{factorize.data.frame}}
+#' $normalised: character vector of columns containing normalized numerical values See \code{\link{normalize.data.frame}}
+#' $timestamp: date and time of creation
+#' $denormalization: used for denormalization of data, if needed
+#' $model.variables: character vector of model varaibles
+#' $target.variables: character vector of target variables
 #' @author Kornel Skitek 2020
-farseerDataSet <- function(dataFrame){
-        originalData <- dataFrame
-        factorizedData <- factorize(dataFrame)
-        normalizedData <- normalize(factorizedData)
-
+farseer.data.frame <- function(dataFrame, formula, additional_targets = NULL){
+        #deparsing formula
+        primary.target <- attr(terms(formula), "variables")
+        primary.target <- as.character(primary.target[[2]])
+        target.variables <- c(primary.target, additional_targets)
+        model.variables <- attr(terms(formula), "term.labels")
+        
+        #prepare model data, create a logical vector for selecting factors, non-factors
+        originalModelData <- dataFrame[, model.variables]
+        factors <- (sapply(originalModelData, is.factor))
+        #add target variables
+        originalData <- cbind(originalModelData, dataFrame[, target.variables])
+        
+        #check, if data is either numeric or factors
+        check <- (sapply(originalData, is.factor) | sapply(originalData, is.numeric))
+        if(!check){
+          bad_columns <- colnames(originalData)
+          stop("Data has to be either factors or numerical values, column/s", bad_columns[!check], "are not")
+        }
+        #select complete cases only
+        originalData <- originalData[complete.cases(originalData),]
+        
+        #change all factors to 0,1 integers
+        factorizedData <- factorize(originalData[, model.variables[factors]]) 
+                                
+        #normalize all numeric data
+        normalizedData <- normalize(originalData[, model.variables[!factors]])
+        
         #create denormalization vector
-        minVector <- sapply(factorizedData, min)
-        maxVector <- sapply(factorizedData, max)
+        minVector <- sapply(normalizedData, min)
+        maxVector <- sapply(normalizedData, max)
         denormalizeVector <- (maxVector - minVector) + minVector
+        #add targets to factorized and normalized data
 
+        #normalizedData <- cbind(normalizedData, originalData[, target.variables])
         creationDate <- Sys.Date()
-        value = list(original = originalData, factorized = factorizedData, normalized = normalizedData, timestamp = creationDate, denormalization = denormalizeVector)
+        value = list(data = cbind(factorizedData, normalizedData, originalData), 
+                     factorized = colnames(factorizedData), 
+                     normalized = colnames(normalizedData), 
+                     timestamp = creationDate, 
+                     denormalization = denormalizeVector, 
+                     model.variables = model.variables, 
+                     target.variables = target.variables)
         attr(value, "class") <- "farseerDataSet"
-        value
+        return(value)
 }
 
 #generic functions
@@ -84,9 +118,10 @@ factorize.data.frame <- function(dataFrame){
                 if(is.factor(dataFrame[, x])){
                         factor_levels <- levels(dataFrame[, x])             #saves the factor names for the second for loop
                         for(a in 1:(length(factor_levels) - 1)){ #this loop binarises a factor to levels() - 1 variables
-                                for (b in 1:length(dataFrame[, x]))
-                                        if (is.na(dataFrame[b, x])) { ret[b, paste(names[x], factor_levels[a], sep = "_")] <- NA} else  #if the value is missing, an NA is saved in a new dataframe
+                                for (b in 1:length(dataFrame[, x])){
+                                        #if (is.na(dataFrame[b, x])) { ret[b, paste(names[x], factor_levels[a], sep = "_")] <- NA} else  #if the value is missing, an NA is saved in a new dataframe
                                                 ret[b, paste(names[x], factor_levels[a], sep = "_")] <- ifelse(identical(as.character(dataFrame[b, x]), factor_levels[a]), 1 , 0) #if the value for a case is the same as the checked factor level in 1 is saved in the appropriate variable, if it belongs to the last factor level - 0 in all new variables
+                                }
                         }
                 }
                 else if(is.numeric(dataFrame[ , x])){
@@ -112,6 +147,7 @@ factorize.data.frame <- function(dataFrame){
 #' @export
 normalize.data.frame <- function(dataFrame){
         dataFrame <- as.data.frame(lapply(dataFrame, normalize.vector))
+        colnames(dataFrame) <- paste(colnames(dataFrame), "normalized", sep = "_")
         return(dataFrame)
 }
 
