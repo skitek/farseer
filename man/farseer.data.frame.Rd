@@ -14,11 +14,11 @@ functions: \link{factorize.data.set}}
 }
 \value{
 list
-$original: original data.frame
-$factorised: all factors are converted to numerical values 0,1 See \code{\link{factorize.data.frame}}
-$normalised: all values are ranged 0-1, factors 0,1. See \code{\link{normalize.data.frame}}
+$data: resulting data.frame
+$factorised: character vector of columns containing vectors converted to numerical values 0,1 See \code{\link{factorize.data.frame}}
+$normalised: character vector of columns containing normalized numerical values See \code{\link{normalize.data.frame}}
 $timestamp: date and time of creation
-$denormalization.vector: used for denormalization of data, if needed
+$denormalization: used for denormalization of data, if needed
 $model.variables: character vector of model varaibles
 $target.variables: character vector of target variables
 }

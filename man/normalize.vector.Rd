@@ -7,7 +7,7 @@
 \method{normalize}{vector}(x)
 }
 \arguments{
-\item{x}{numerical vector to be normalised.}
+\item{x}{numerical vector to be normalized.}
 }
 \description{
 normalizes the given vector

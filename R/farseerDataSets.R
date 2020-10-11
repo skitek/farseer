@@ -6,7 +6,7 @@
 #'
 #' functions: \link{factorize.data.set}
 #' @return list
-#' $data: original data.frame
+#' $data: resulting data.frame
 #' $factorised: character vector of columns containing vectors converted to numerical values 0,1 See \code{\link{factorize.data.frame}}
 #' $normalised: character vector of columns containing normalized numerical values See \code{\link{normalize.data.frame}}
 #' $timestamp: date and time of creation
@@ -28,10 +28,10 @@ farseer.data.frame <- function(dataFrame, formula, additional_targets = NULL){
         originalData <- cbind(originalModelData, dataFrame[, target.variables])
         
         #check, if data is either numeric or factors
-        check <- (sapply(originalData, is.factor) | sapply(originalData, is.numeric))
-        if(!check){
-          bad_columns <- colnames(originalData)
-          stop("Data has to be either factors or numerical values, column/s", bad_columns[!check], "are not")
+        bad_columns <- colnames(originalData)
+        bad_columns <- bad_columns[!((sapply(originalData, is.factor) | sapply(originalData, is.numeric)))]
+        if(length(bad_columns) != 0){
+          stop("Data has to be either factors or numerical values, column/s [", bad_columns, "] is/are not")
         }
         #select complete cases only
         originalData <- originalData[complete.cases(originalData),]
@@ -82,6 +82,7 @@ factorize <- function(obj){
 normalize <- function(obj){
         UseMethod("normalize")
 }
+
 
 #' factorize.data.frame
 #'
@@ -155,8 +156,8 @@ normalize.data.frame <- function(dataFrame){
 
 #'normalizes the given vector
 #'
-#' @param x numerical vector to be normalised.
+#' @param x numerical vector to be normalized.
 #' @export
 normalize.vector <- function(x){
-        return((x - min(x))/(range(x)))
+        return((x - min(x))/(max(x)-min(x)))
 }

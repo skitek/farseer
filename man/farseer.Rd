@@ -28,17 +28,17 @@ models <- farseer(formula, dataFrame, additional_targetc = c(<additional dependa
 models <- farseer(dataFrame, additional_targetc = c(<additional dependant variable names>))
 }
 \arguments{
-\item{formula}{a formula for building models. If it is ommited, a new formula will be created using
-last variable in data.frame as dependant variable and all others as independent variables.}
+\item{formula}{a formula for building models. If it is omitted, a new formula will be created using
+last variable in data.frame as dependent variable and all others as independent variables.}
 
 \item{dataFrame}{a data.frame containing data to be used for training.}
 
-\item{additional_targets}{a list of dependant variables, other then the one specified in formula,
+\item{additional_targets}{a list of dependent variables, other then the one specified in formula,
 if models for more then one dependand variable should be created. Note, that in current version separate models are
-created. If all dependant variables are situated as last variables in the data.frame, farseer can be used without
+created. If all dependent variables are situated as last variables in the data.frame, farseer can be used without
 providing formula, as it will be automatically created.}
 
-\item{farseerModels}{optional parameter, when existing models are supossed to be retrained.
+\item{farseerModels}{optional parameter, when existing models are supposed to be retrained.
 If it remains NULL, a new set of models will be returned.}
 
 \item{test}{boolean, if TRUE the models will be tested. Default is TRUE.}
@@ -68,8 +68,8 @@ It generates three models, a linear model, neural networks and partition tree
 wrapped in an \code{\link{farseer.models}}-object. Those models can be then plotted using the generic \code{plot} function.
 Additionally, the \code{\link{farseer.data.frames}} are also returned for further reference.
 
-Dependant and independant variables can be either provided as formula, or if all variables should be used
-one can simply place the dependant variable as last variable in \code{dataFrame}.
-If models should be created for more than one variable simultaniously, additional dependand variables
+Dependent and independent variables can be either provided as formula, or if all variables should be used
+one can simply place the dependent variable as last variable in \code{dataFrame}.
+If models should be created for more than one variable simultaneously, additional dependednt variables
 can be specified. They will be excluded from \code{dataFrame} prior to training.
 }
