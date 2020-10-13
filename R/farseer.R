@@ -84,26 +84,19 @@ farseer <- function(formula = NULL, dataFrame, additional_targets = NULL, farsee
   
   if(is.null(farseerModels)){
     #farseerModels <- farseer.models(farseerDataFrame, test = test)
+    predictions <- NULL
+    farseerDataFrame <- farseer.data.frame(dataFrame = dataFrame, formula = formula, additional_targets)
+    farseerModels <- farseer.models(farseerDataFrame = farseerDataFrame, ...)
+    if(test){
+      for(i in 1:length(farseerModels)){
+         prediction <- predict(farseerModels[[i]], farseerDataFrame$data[-farseerModels[[i]]$trainingVector, ])
+         predictions[[farseerModels[[i]]$target]] <- prediction
+      }
+    }
   }
   else{
     #farseerModels <- farseer.models(dataFrame, farseerModels, test)
   }
-  return(farseerModels)
+  return(list(models = farseerModels, data.frame = farseerDataFrame, predictions = predictions))
 }
 
-#'Help function: create formula
-#'
-#'Creates a formula using last entry in a char vector as dependant variable 
-#'and all others as independent variables.
-#'
-#'@param names colnames of a data.frame
-#'
-#'@return formula
-#'
-createFormula <- function(names){
-  len <- length(names)
-  dependent <- names[len]
-  independent <- names[1:len-1]
-  formula <- as.formula(paste(dependent, paste(independent, collapse = " + "), sep = " ~ "))
-  return(formula)
-}

@@ -5,13 +5,13 @@
 \title{farseer.training.vector (function)}
 \usage{
 ##gets a psedo-random vector
-trainingVector <- farseer.training.vector(nrows(dataFrame))
+trainingVector <- farseer.training.vector(nrow(dataFrame))
 
 ##smaller training fraction
-trainingVector <- farseer.training.vector(nrows(dataFrame), trainingFraction = 0.7)
+trainingVector <- farseer.training.vector(nrow(dataFrame), trainingFraction = 0.7)
 
 ##set a seed
-trainingVector <- farseer.training.vector(nrows(dataFrame), seed = 123)
+trainingVector <- farseer.training.vector(nrow(dataFrame), seed = 123)
 }
 \arguments{
 \item{noOfCases}{integer, number of cases in a data.frame}

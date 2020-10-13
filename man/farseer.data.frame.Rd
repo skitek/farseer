@@ -2,8 +2,7 @@
 % Please edit documentation in R/farseerDataSets.R
 \name{farseer.data.frame}
 \alias{farseer.data.frame}
-\title{farseerDataSet - S3 class for creating and storing factorized and normalized datasets
-constructor for a farseerDataSet}
+\title{farseerDataSet - S3 class for creating and storing factorized and normalized datasets}
 \usage{
 farseer.data.frame(dataFrame, formula, additional_targets = NULL)
 }
@@ -24,7 +23,6 @@ $target.variables: character vector of target variables
 }
 \description{
 farseerDataSet - S3 class for creating and storing factorized and normalized datasets
-constructor for a farseerDataSet
 }
 \author{
 Kornel Skitek 2020

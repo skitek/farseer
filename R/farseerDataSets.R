@@ -1,6 +1,5 @@
 #'farseerDataSet - S3 class for creating and storing factorized and normalized datasets
-
-#' constructor for a farseerDataSet
+#'
 #'
 #' @param dataFrame a data.frame containing data for modeling
 #'
@@ -22,11 +21,8 @@ farseer.data.frame <- function(dataFrame, formula, additional_targets = NULL){
         model.variables <- attr(terms(formula), "term.labels")
         
         #prepare model data, create a logical vector for selecting factors, non-factors
-        originalModelData <- dataFrame[, model.variables]
-        factors <- (sapply(originalModelData, is.factor))
-        #add target variables
-        originalData <- cbind(originalModelData, dataFrame[, target.variables])
-        
+        originalData <- dataFrame[, c(model.variables, target.variables)]
+        factors <- sapply(originalData[, model.variables], is.factor)
         #check, if data is either numeric or factors
         bad_columns <- colnames(originalData)
         bad_columns <- bad_columns[!((sapply(originalData, is.factor) | sapply(originalData, is.numeric)))]
@@ -42,22 +38,15 @@ farseer.data.frame <- function(dataFrame, formula, additional_targets = NULL){
         #normalize all numeric data
         normalizedData <- normalize(originalData[, model.variables[!factors]])
         
-        #create denormalization vector
-        minVector <- sapply(normalizedData, min)
-        maxVector <- sapply(normalizedData, max)
-        denormalizeVector <- (maxVector - minVector) + minVector
-        #add targets to factorized and normalized data
-
-        #normalizedData <- cbind(normalizedData, originalData[, target.variables])
         creationDate <- Sys.Date()
         value = list(data = cbind(factorizedData, normalizedData, originalData), 
                      factorized = colnames(factorizedData), 
                      normalized = colnames(normalizedData), 
                      timestamp = creationDate, 
-                     denormalization = denormalizeVector, 
                      model.variables = model.variables, 
+                     factor.variables = factors,
                      target.variables = target.variables)
-        attr(value, "class") <- "farseerDataSet"
+        attr(value, "class") <- "farseer.data.frame"
         return(value)
 }
 
@@ -160,4 +149,47 @@ normalize.data.frame <- function(dataFrame){
 #' @export
 normalize.vector <- function(x){
         return((x - min(x))/(max(x)-min(x)))
+}
+
+#generic functions
+
+models <- function(obj, ...){
+  UseMethod("models")
+}
+
+#' create (farseer.data.frame)
+#' 
+#' Call of the create function on an farseer.data.frame object creates new farseer.models
+#' 
+#' @param farseerDataFrame prepared data frame for training
+#' 
+#' @return list of models
+#' 
+models.farseer.data.frame <- function(farseerDataFrame, ...){
+  i <- 1
+  value <- list()
+  while(i <= length(farseerDataFrame$target.variables)){
+    entry <- create.farseer.models(farseerDataFrame = farseerDataFrame, target = i, ...)
+    value[[farseerDataFrame$target.variables[i]]] <- entry
+    i <- i+1
+  }
+  return(value)    
+}
+
+
+
+is.farseer.data.frame <- function(obj){
+  if(class(obj) == "farseer.data.frame"){
+    return(TRUE)
+  }
+  else{
+    return(FALSE)
+  }
+}
+
+print.farseer.data.frame <- function(obj){
+  print(summary(obj[[1]]))
+  for(i in 2:length(obj)){
+    print(obj[i])
+  }
 }

@@ -8,6 +8,11 @@ farseer.models(farseerDataFrame, mode = "create", ...)
 }
 \description{
 Container class for models trained with farseer-package.
+}
+\details{
+Using this constructor will result in training/retraining for all targets
+specified in \code{\link{farseer.data.frame}}
+
 It is a list of models
 \tabular{ll}{
 $linear \tab linear model \cr
