@@ -65,42 +65,60 @@ multiplot <- function(plots, formula, dataFrame){
 }
 #BUG: use GGPLOT2!!!
 
-#'rocplot (S3 function)
+#'farseer.rocplot (S3 function)
 #'
 #'creates a roc-plot for models
 #'
 #'@param predictions a data.frame containig predictions of the models
-#'@param trueValue a vector of the measured value
 #'@param cutoff numeric value for labeling, all trueValues < cuttoff will be labeled 0, otherwise 1
 #'
 #'@return a roc plot
 #'
 #'@export
-rocplot <- function(predictions, trueValue, cuttoff = 1, predictionNames = c("linear", "partition", "neural"), title = NULL){
-  #create labels
-  predictions$labels <- ifelse(trueValue < cuttoff, 0, 1)
-  #create predictions
-  predictionsList <- list()
-  for(i in 1:length(predictionNames)){
-    predictionsList[[predictionNames[i]]] <- ROCR::prediction(predictions = predictions[,predictionNames[i]], labels = predictions$labels)
-  }
-  
-  #create performance
-  performanceList <- list()
-  for(i in 1: length(predictionNames)){
-    performanceList[[predictionNames[i]]] <- ROCR::performance(predictionsList[[predictionNames[i]]], "tpr", "fpr")
-    auc <- ROCR::performance(predictionsList[[predictionNames[i]]], "auc")
-    print(paste(predictionNames[i], ": ", as.character(auc@y.values[[1]])))
-  }
-  
+farseer.rocplot <- function(performanceList, targetName, title = NULL){
   #plot
   if(is.null(title)){
-    title <- paste("ROC plot for ", names(trueValue))
+    title <- paste("ROC plot for ", targetName)
   }
   ROCR::plot(performanceList[[1]], lty = 1, main = title)
   for(i in 2:length(performanceList)){
     ROCR::plot(performanceList[[i]], lty = i, add = TRUE)
   }
-  legend(0.8, 0.5, predictionNames, lty = c(1:length(performanceList)))
+  legend(0.8, 0.5, names(performanceList), lty = c(1:length(performanceList)))
   #return(rocpl)
+}
+
+#' farseer.bland.altmann (S3 function)
+#' 
+#' creates a bland-altmann plot for numeric predictions
+#' 
+#' @param predictions a data.frame containing predictions of the models and the target variable
+#' @param tartetName name of the column with measured data
+#' @param title title of plot
+#' @export
+farseer.bland.altmann <- function(predictions, targetName = "original", title = NULL){
+  if(is.null(title)){
+    title <- targetName
+  }
+  
+  labels <- colnames(predictions)
+  labels <- labels[labels != targetName]
+  dataset <- predictions[,labels]
+  measured <- predictions[,targetName, drop = FALSE]
+  plots <- list()
+  for(x in 1:length(labels)){
+    avg <- (dataset[x] + measured)/2 #a mean measure is created
+    diff <- (dataset[x] - measured)  #a difference between measurements is created
+    plot_dataset <- as.data.frame(cbind(avg, diff))
+    colnames(plot_dataset) <- c("avg", "diff")
+    
+    plot <- ggplot2::ggplot(plot_dataset, ggplot2::aes(x = avg, y = diff))
+    plots[[labels[x]]] <- plot + ggplot2::geom_point(alpha = 0.5) + ggplot2::geom_hline(yintercept = mean(plot_dataset$diff), colour = "blue", size = 0.5) + 
+            ggplot2::annotate("text", y = mean(plot_dataset$diff), x = max(plot_dataset$avg), label = round(mean(plot_dataset$diff), digits = 2), color = "blue", vjust = 1.2) + #adds the mean difference
+            ggplot2::geom_hline(yintercept = mean(plot_dataset$diff) - (1.96 * sd(plot_dataset$diff)), colour = "red", size = 0.5) + #adds the -1.96SD line
+            ggplot2::geom_hline(yintercept = mean(plot_dataset$diff) + (1.96 * sd(plot_dataset$diff)), colour = "red", size = 0.5) + #adds the -1.96SD line
+            ggplot2::ylab("Real - Predicted") + ggplot2::xlab("Average") + ggplot2::ggtitle(paste(title, labels[x]))
+    
+  }
+  return(plots)
 }

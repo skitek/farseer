@@ -6,15 +6,13 @@
 \usage{
 performance.classification(
   predictions,
-  trueValue,
   cuttoff = 1,
-  predictionNames = c("linear", "partition", "neural")
+  predictionNames = c("linear", "partition", "neural"),
+  observed = "original"
 )
 }
 \arguments{
-\item{predictions}{a data.frame containig predictions of the models}
-
-\item{trueValue}{a vector of the measured value}
+\item{predictions}{a data.frame containing predictions of the models and original data}
 
 \item{cutoff}{numeric: value for labeling, all trueValues < cuttoff will be labeled 0, otherwise 1;
 non-numeric: if it is equal to cutoff, will be labeled 0, otherwise 1}

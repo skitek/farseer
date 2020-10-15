@@ -50,9 +50,13 @@ create.farseer.models <- function(farseerDataFrame, target, ...){
   
   trainingVector <- farseer.training.vector(nrow(farseerDataFrame$data), ...)
   trainingSet <- farseerDataFrame$data[trainingVector,]
-  partition_tree <- rpart::rpart(formula = formula, data = trainingSet) #partition tree is created
-  neural <- neuralnet::neuralnet(formula = formula, data = trainingSet, hidden = 5) #neural network is created
-  linear <- lm(formula = formula, data = trainingSet)
+  partition_tree <- tryCatch(rpart::rpart(formula = formula, data = trainingSet), error = function(e) e)
+  neural <- tryCatch(neuralnet::neuralnet(formula = formula, data = trainingSet, hidden = 5, lifesign = 'full', stepmax = 5e+05), error = function(e) e, warning = function(w) w) #neural network is created
+  linear <- tryCatch(lm(formula = formula, data = trainingSet), error = function(e) e)
+  
+  if(checkModels(class_partition = class(partition_tree), class_neural = class(neural), class_linear = class(linear))){
+    return(NULL)
+  }
   
   value <- list(target = farseerDataFrame$target.variables[target], linear = linear, partition = partition_tree, neural = neural,
                 call = formula, trainingVector = trainingVector)
@@ -60,6 +64,19 @@ create.farseer.models <- function(farseerDataFrame, target, ...){
   return(value)
 }
 
+#'checkModels(S3 function)
+#'
+#'help function for checking, if models were created
+#'
+#'@return boolean
+checkModels <- function(class_partition, class_neural, class_linear){
+  if((class_partition[1] != "rpart") | (class_neural[1] != "nn") | (class_linear[1] != "lm")){
+    return(TRUE)
+  }
+  else{
+    return(FALSE)
+  }
+}
 
 #Performance measurement
 #'performance.classification (S3 function)
@@ -67,8 +84,7 @@ create.farseer.models <- function(farseerDataFrame, target, ...){
 #'calculates performance measurements of models.
 #'
 #'
-#'@param predictions a data.frame containig predictions of the models
-#'@param trueValue a vector of the measured value
+#'@param predictions a data.frame containing predictions of the models and original data
 #'@param cutoff numeric: value for labeling, all trueValues < cuttoff will be labeled 0, otherwise 1; 
 #'non-numeric: if it is equal to cutoff, will be labeled 0, otherwise 1
 #'
@@ -80,13 +96,13 @@ create.farseer.models <- function(farseerDataFrame, target, ...){
 #'}
 #'
 #'@export
-performance.classification <- function(predictions, trueValue, cuttoff = 1, predictionNames = c("linear", "partition", "neural")){
+performance.classification <- function(predictions, cuttoff = 1, predictionNames = c("linear", "partition", "neural"), observed = "original"){
   #create labels
   if(is.numeric(cuttoff)){
-      predictions$labels <- ifelse(trueValue < cuttoff, 0, 1)
+      predictions$labels <- ifelse(predictions$original < cuttoff, 0, 1)
   }
   else {
-      predictions$labels <- ifelse(trueValue == cuttoff, 0, 1)
+      predictions$labels <- ifelse(predictions$original == cuttoff, 0, 1)
   }
   #create predictions
   predictionsList <- list()
@@ -96,6 +112,7 @@ performance.classification <- function(predictions, trueValue, cuttoff = 1, pred
   
   #create performance
   performanceList <- list()
+  aucList <- list()
   for(i in 1: length(predictionNames)){
     performanceList[[predictionNames[i]]] <- ROCR::performance(predictionsList[[predictionNames[i]]], "tpr", "fpr")
     aucList[[predictionNames[i]]] <- ROCR::performance(predictionsList[[predictionNames[i]]], "auc")
@@ -109,8 +126,7 @@ performance.classification <- function(predictions, trueValue, cuttoff = 1, pred
 #'Calculates the absolute and relative errors of predictions, as well as their means and SDs.
 #'Additionally calculates the correlations.
 #'
-#'@param predictions predicted values
-#'@param trueValue observed values
+#'@param predictions data.frame with predictied and observed values
 #'@param predictionNames names of the columns, where predictions can be found
 #'
 #'@return 
@@ -118,18 +134,18 @@ performance.classification <- function(predictions, trueValue, cuttoff = 1, pred
 #'\item{errors}{data.frame with measured, predicted, absolute and relative errors for all models}
 #'\item{performance}{data.frame with correlation, mean error and SD of mean error}
 #'}
-performance.numeric <- function(predictions, trueValue, predictionNames = c("linear", "partition", "neural")){
-  errors <- as.data.frame(cbind(predictions, trueValue))
+performance.numeric <- function(predictions, predictionNames = c("linear", "partition", "neural"), observed = "original"){
+  value <- predictions
   performanceDataFrame <- data.frame(correlation = numeric(), mean_error = numeric(), error_SD = numeric())
   for(i in 1:length(predictionNames)){
-    errors[, paste(predictionNames[i], "_error")] <- errors[, predictionNames[i]] - trueValue
-    errors[, paste(predictionNames[i], "_relative_error")] <- (errors[, paste(predictionNames[i], "_error")]/errors[, predictionNames[i]])*100
-    correlation <- cor(errors[, predictionNames[i]], trueValue)
-    mean_error <- mean(errors[, paste(predictionNames[i], "_error")])
-    error_SD <- sd(errors[, paste(predictionNames[i], "_error")])
+    value[, paste(predictionNames[i], "_error")] <- value[, predictionNames[i]] - value[, observed]
+    value[, paste(predictionNames[i], "_relative_error")] <- (value[, paste(predictionNames[i], "_error")]/value[, predictionNames[i]])*100
+    correlation <- cor(value[, predictionNames[i]], value[, observed])
+    mean_error <- mean(value[, paste(predictionNames[i], "_error")])
+    error_SD <- sd(value[, paste(predictionNames[i], "_error")])
     performanceDataFrame[predictionNames[i],] <- c(correlation, mean_error, error_SD)
   }
-  return(list(errors = errors, performance = performanceDataFrame))
+  return(list(errors = value, performance = performanceDataFrame))
 }
 #GENERIC FUNCTIONS
 
@@ -159,27 +175,42 @@ predict.farseer.models <- function(models, newData){
   linearPrediction <- predict.lm(models$linear, newData)
   partitionPrediction <- rpart.plot::rpart.predict(models$partition, newData)
   neuralPrediction <- neuralnet::compute(models$neural, newData)
+  neuralPrediction <- neuralPrediction$net.result
+  
+  if(is.factor(newData[,models$target])){
+    #levels <- levels(newData[,models$target])
+    #the second response column corresponds to values for the "higher" factor probability
+    partitionPrediction <- partitionPrediction[,2]
+    neuralPrediction <- neuralPrediction[,2]
+    #partitionPrediction <- levels[max.col(partitionPrediction)]
+    #neuralPrediction <- levels[max.col(neuralPrediction)]
+  }
   
   pred <- data.frame(original = newData[,models$target], linear = linearPrediction, partition = partitionPrediction, 
-                      neural = neuralPrediction$net.result)
+                      neural = neuralPrediction)
   
   #calculate performance
-  trueValue <- newData[,models$target, drop = FALSE]
+#  trueValue <- newData[,models$target, drop = FALSE]
   
-  if(is.numeric(trueValue)){
-    perf <- performance.numeric(predictions = pred, trueValue = trueValue)
+  if(is.numeric(pred$original)){
+    perf <- performance.numeric(predictions = pred)
+    perf[["plots"]] <- farseer.bland.altmann(predictions = pred, title = models$target)
+    pred_type <- "numeric"
   }
   else{
-    if(is.factor(trueValue)){
-      levels <- levels(trueValue)
-      perf <- performance.classification(predictions = pred, trueValue = trueValue, cuttoff = levels[1])
+    if(is.factor(pred$original)){
+      levels <- levels(pred$original)
+      perf <- performance.classification(predictions = pred,  cuttoff = levels[1])
+      farseer.rocplot(perf$performance, targetName = models$target)
     }
     else{
-      perf <- performance.classification(predictions = pred, trueValue = trueValue)
+      perf <- performance.classification(predictions = pred)
+      farseer.rocplot(perf$performance, targetName = models$target)
     }
+    pred_type <- "classification"
   }
   
-  value <- list(predictions = pred, performance = perf)
+  value <- list(predictions = pred, performance = perf, prediction_type = pred_type)
   return(value)
 }
 

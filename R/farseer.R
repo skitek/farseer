@@ -87,9 +87,10 @@ farseer <- function(formula = NULL, dataFrame, additional_targets = NULL, farsee
     predictions <- NULL
     farseerDataFrame <- farseer.data.frame(dataFrame = dataFrame, formula = formula, additional_targets)
     farseerModels <- farseer.models(farseerDataFrame = farseerDataFrame, ...)
-    if(test){
+    if((test) & !is.null(farseerModels)){
       for(i in 1:length(farseerModels)){
-         prediction <- predict(farseerModels[[i]], farseerDataFrame$data[-farseerModels[[i]]$trainingVector, ])
+         testingSet <-  farseerDataFrame$data[-farseerModels[[i]]$trainingVector, ]
+         prediction <- predict(farseerModels[[i]], testingSet)
          predictions[[farseerModels[[i]]$target]] <- prediction
       }
     }
@@ -97,6 +98,6 @@ farseer <- function(formula = NULL, dataFrame, additional_targets = NULL, farsee
   else{
     #farseerModels <- farseer.models(dataFrame, farseerModels, test)
   }
-  return(list(models = farseerModels, data.frame = farseerDataFrame, predictions = predictions))
+  return(list(models = farseerModels, data.frame = farseerDataFrame, test = predictions))
 }
 

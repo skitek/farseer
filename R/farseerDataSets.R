@@ -13,6 +13,7 @@
 #' $model.variables: character vector of model varaibles
 #' $target.variables: character vector of target variables
 #' @author Kornel Skitek 2020
+#' @export
 farseer.data.frame <- function(dataFrame, formula, additional_targets = NULL){
         #deparsing formula
         primary.target <- attr(terms(formula), "variables")
@@ -27,7 +28,16 @@ farseer.data.frame <- function(dataFrame, formula, additional_targets = NULL){
         bad_columns <- colnames(originalData)
         bad_columns <- bad_columns[!((sapply(originalData, is.factor) | sapply(originalData, is.numeric)))]
         if(length(bad_columns) != 0){
-          stop("Data has to be either factors or numerical values, column/s [", bad_columns, "] is/are not")
+          stop("Data has to be either factors, logical, or numerical values, column/s [", bad_columns, "] is/are not")
+        }
+        #check, if target.variables defined as factors are binary
+        target.factors <- target.variables[sapply(originalData[, target.variables, drop = FALSE], is.factor)]
+        if(length(target.factors) != 0){
+        for(i in 1:length(target.factors)){
+          if(!length(levels(originalData[,target.factors[i]])) == 2){
+            stop(paste("Targets, if they aare factors, can only be binary;", target.factors[i], "is not"))
+          }
+        }
         }
         #select complete cases only
         originalData <- originalData[complete.cases(originalData),]
@@ -39,7 +49,7 @@ farseer.data.frame <- function(dataFrame, formula, additional_targets = NULL){
         normalizedData <- normalize(originalData[, model.variables[!factors]])
         
         creationDate <- Sys.Date()
-        value = list(data = cbind(factorizedData, normalizedData, originalData), 
+        value = list(data = cbind(factorizedData, normalizedData, originalData[,target.variables, drop = FALSE]), 
                      factorized = colnames(factorizedData), 
                      normalized = colnames(normalizedData), 
                      timestamp = creationDate, 
@@ -49,6 +59,7 @@ farseer.data.frame <- function(dataFrame, formula, additional_targets = NULL){
         attr(value, "class") <- "farseer.data.frame"
         return(value)
 }
+
 
 #generic functions
 
@@ -169,11 +180,23 @@ models.farseer.data.frame <- function(farseerDataFrame, ...){
   i <- 1
   value <- list()
   while(i <= length(farseerDataFrame$target.variables)){
+    print(paste("Training start for: ", farseerDataFrame$target.variables[i], "target ", as.character(i), " from ", 
+                as.character(length(farseerDataFrame$target.variables))))
     entry <- create.farseer.models(farseerDataFrame = farseerDataFrame, target = i, ...)
-    value[[farseerDataFrame$target.variables[i]]] <- entry
+    if(!is.null(entry)){
+      value[[farseerDataFrame$target.variables[i]]] <- entry
+      print("OK")
+    }
+    else
+    {
+      print("failed")
+    }
     i <- i+1
   }
-  return(value)    
+  if(length(value) != 0)
+    return(value)    
+  else
+    return(NULL)
 }
 
 

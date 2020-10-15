@@ -6,14 +6,12 @@
 \usage{
 performance.numeric(
   predictions,
-  trueValue,
-  predictionNames = c("linear", "partition", "neural")
+  predictionNames = c("linear", "partition", "neural"),
+  observed = "original"
 )
 }
 \arguments{
-\item{predictions}{predicted values}
-
-\item{trueValue}{observed values}
+\item{predictions}{data.frame with predictied and observed values}
 
 \item{predictionNames}{names of the columns, where predictions can be found}
 }
