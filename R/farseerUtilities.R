@@ -18,15 +18,6 @@
 #' ##set a seed
 #' trainingVector <- farseer.training.vector(nrow(dataFrame), seed = 123)
 #' 
-#' @examples
-#' #create a farseer.data.frame
-#' data <- farseer.data.frame(formula = formula, dataFrame)
-#' #get the vector
-#' training.vector <- farseer.training.vector(noOfCases = nrows(data$data))
-#' 
-#' #get the sets
-#' training.set <- data$data[training.vector,]
-#' testing.set <- data$data[-training.vector,]
 #' 
 #' @export
 farseer.training.vector <- function(noOfCases, trainingFraction = 0.9, seed = NULL){
@@ -80,12 +71,17 @@ farseer.rocplot <- function(performanceList, targetName, title = NULL){
   if(is.null(title)){
     title <- paste("ROC plot for ", targetName)
   }
-  ROCR::plot(performanceList[[1]], lty = 1, main = title)
-  for(i in 2:length(performanceList)){
-    ROCR::plot(performanceList[[i]], lty = i, add = TRUE)
+  #create ggplots
+  groupNames <-  names(performanceList)
+  frame <- data.frame()
+  for(i in 1:length(performanceList)){
+     pf <- data.frame(FPR = performanceList[[i]]@x.values[[1]], TPR = performanceList[[i]]@y.values[[1]], Group = groupNames[i])
+     frame <- rbind(frame, pf)
   }
-  legend(0.8, 0.5, names(performanceList), lty = c(1:length(performanceList)))
-  #return(rocpl)
+  ggplot <- ggplot2::ggplot() + ggplot2::geom_line(data = frame, ggplot2::aes(x=FPR, y = TPR,colour = Group, group = Group)) +
+    # ggplot2::annotate("text", label = result, x = 0.875, y = 0.05, size = 5, colour = "red") +
+    ggplot2::xlab("False Positive Rate (1-Specificity)")+ggplot2::ylab("True Positive Rate (Sensitivity)")+ggplot2::ggtitle(title)
+  return(ggplot)
 }
 
 #' farseer.bland.altmann (S3 function)
@@ -106,19 +102,25 @@ farseer.bland.altmann <- function(predictions, targetName = "original", title = 
   dataset <- predictions[,labels]
   measured <- predictions[,targetName, drop = FALSE]
   plots <- list()
+  yMAX <- 0
+  yMIN <- 0
   for(x in 1:length(labels)){
     avg <- (dataset[x] + measured)/2 #a mean measure is created
     diff <- (dataset[x] - measured)  #a difference between measurements is created
     plot_dataset <- as.data.frame(cbind(avg, diff))
     colnames(plot_dataset) <- c("avg", "diff")
-    
     plot <- ggplot2::ggplot(plot_dataset, ggplot2::aes(x = avg, y = diff))
     plots[[labels[x]]] <- plot + ggplot2::geom_point(alpha = 0.5) + ggplot2::geom_hline(yintercept = mean(plot_dataset$diff), colour = "blue", size = 0.5) + 
             ggplot2::annotate("text", y = mean(plot_dataset$diff), x = max(plot_dataset$avg), label = round(mean(plot_dataset$diff), digits = 2), color = "blue", vjust = 1.2) + #adds the mean difference
             ggplot2::geom_hline(yintercept = mean(plot_dataset$diff) - (1.96 * sd(plot_dataset$diff)), colour = "red", size = 0.5) + #adds the -1.96SD line
             ggplot2::geom_hline(yintercept = mean(plot_dataset$diff) + (1.96 * sd(plot_dataset$diff)), colour = "red", size = 0.5) + #adds the -1.96SD line
-            ggplot2::ylab("Real - Predicted") + ggplot2::xlab("Average") + ggplot2::ggtitle(paste(title, labels[x]))
-    
+            ggplot2::ylab("Real - Predicted") + ggplot2::xlab("Average") + ggplot2::ggtitle(paste("Bland-Altmann for ", labels[x]))
+    yMAX <- max(yMAX, max(plot_dataset$diff), 1.96 * sd(plot_dataset$diff))
+    yMIN <- min(yMIN, min(plot_dataset$diff), -1*(1.96 * sd(plot_dataset$diff)))
+  }
+  
+  for(i in 1:length(plots)){
+    plots[[i]] <- plots[[i]] + ggplot2::ylim(yMIN+(0.05*yMIN), yMAX+(0.05*yMAX))
   }
   return(plots)
 }

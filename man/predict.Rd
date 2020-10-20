@@ -2,10 +2,10 @@
 % Please edit documentation in R/farseerModels.R
 \name{predict}
 \alias{predict}
-\title{test (generic)}
+\title{predict (generic)}
 \usage{
 predict(x, y)
 }
 \description{
-test (generic)
+predict (generic)
 }

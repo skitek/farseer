@@ -23,14 +23,3 @@ trainingVector <- farseer.training.vector(nrow(dataFrame), seed = 123)
 \description{
 Gets a integer vector of case numbers for the training set
 }
-\examples{
-#create a farseer.data.frame
-data <- farseer.data.frame(formula = formula, dataFrame)
-#get the vector
-training.vector <- farseer.training.vector(noOfCases = nrows(data$data))
-
-#get the sets
-training.set <- data$data[training.vector,]
-testing.set <- data$data[-training.vector,]
-
-}

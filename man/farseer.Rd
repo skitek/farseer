@@ -2,7 +2,7 @@
 % Please edit documentation in R/farseer.R
 \name{farseer}
 \alias{farseer}
-\title{farseer(function)}
+\title{farseer(S3-class)}
 \usage{
 ##Trains new models. Creates a formula using last variable in data.frame as dependant variable 
 ##and all others as independent variables.
@@ -50,13 +50,14 @@ If it remains NULL, a new set of models will be returned.}
 \describe{
 \item{$models}{\code{\link{farseer.models}}}
 \item{$data.frames}{\code{\link{farseer.data.frames}}}
+\item{$test}{if tested, predictions, performance and plots are provided}
 
 \strong{If \code{additional_targets} are provided, a list:}
 \describe{
-\item{\code{$<dependant variable name>}}{list of models and data.frames as described above}
-\item{\code{$<additional_targets[1]>}}{list of models and data.frames as described above, for first additional target}
+\item{\code{$<dependant variable name>}}{list of models, data.frames and test as described above}
+\item{\code{$<additional_targets[1]>}}{list of models, data.frames and test as described above, for first additional target}
 \item{...}
-\item{\code{$<additional_targets[n]>}}{list of models and data.frames as described above, for last additional target}
+\item{\code{$<additional_targets[n]>}}{list of models, data.frames and test as described above, for last additional target}
 }
 }
 }

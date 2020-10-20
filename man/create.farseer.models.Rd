@@ -4,7 +4,12 @@
 \alias{create.farseer.models}
 \title{create (farseer.models)}
 \usage{
-create.farseer.models(farseerDataFrame, target, ...)
+create.farseer.models(
+  farseerDataFrame,
+  target,
+  neural_max_threshold = 0.1,
+  ...
+)
 }
 \arguments{
 \item{farseerDataFrame}{a data for training (must be a farseer.data.frame)}

@@ -9,8 +9,6 @@ farseer.rocplot(performanceList, targetName, title = NULL)
 \arguments{
 \item{predictions}{a data.frame containig predictions of the models}
 
-\item{trueValue}{a vector of the measured value}
-
 \item{cutoff}{numeric value for labeling, all trueValues < cuttoff will be labeled 0, otherwise 1}
 }
 \value{

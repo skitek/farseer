@@ -16,26 +16,6 @@ This function converts all factors to numeric values 0 and 1.
 For every factor level save one a new variable is created {name_factor_name}
 last factor level does not have to be included, as if all the values are 0 it means this case belongs to the group
 }
-\examples{
-\preformatted{
- example <- data.frame(Patient_Number = c(1:5), Sex = c("male", "female", "diverse", NA , "male"))
- factorize.data.frame(example)
- >example
-    Patient_Number     Sex
-    1              1    male
-    2              2  female
-    3              3 diverse
-    4              4    <NA>
-    5              5    male
- > factorize.data.frame(example)
-    Patient_Number Sex_diverse Sex_female
-    1              1           0          0
-    2              2           0          1
-    3              3           1          0
-    4              4          NA         NA
-    5              5           0          0
-}
-}
 \author{
 Kornel Skitek 2020
 }

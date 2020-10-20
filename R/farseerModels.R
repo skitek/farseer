@@ -36,7 +36,7 @@ farseer.models <- function(farseerDataFrame, mode = "create", ...){
 #' 
 #' @returns a farseer.models object
 #' 
-create.farseer.models <- function(farseerDataFrame, target, ...){
+create.farseer.models <- function(farseerDataFrame, target, neural_max_threshold = 0.1, ...){
   if(!is.farseer.data.frame(farseerDataFrame) | !is.numeric(target)){
     stop("invalid parameters")
   }
@@ -51,7 +51,16 @@ create.farseer.models <- function(farseerDataFrame, target, ...){
   trainingVector <- farseer.training.vector(nrow(farseerDataFrame$data), ...)
   trainingSet <- farseerDataFrame$data[trainingVector,]
   partition_tree <- tryCatch(rpart::rpart(formula = formula, data = trainingSet), error = function(e) e)
-  neural <- tryCatch(neuralnet::neuralnet(formula = formula, data = trainingSet, hidden = 5, lifesign = 'full', stepmax = 5e+05), error = function(e) e, warning = function(w) w) #neural network is created
+  'train neural networks'
+  threshold = 0.01
+  counter <- 1
+  neural <- NULL
+  while((class(neural) != "nn") & (threshold <= neural_max_threshold)){
+  print(paste("Training for ", farseerDataFrame$target.variables[target], "run: ", as.character(counter), " with threshold", as.character(threshold)));
+  neural <- tryCatch(neuralnet::neuralnet(formula = formula, data = trainingSet, hidden = 5, lifesign = 'minimal', stepmax = 5e+05, threshold = threshold), error = function(e) e, warning = function(w) w) #neural network is created
+  threshold <- threshold + 0.01
+  counter <- counter+1
+  }
   linear <- tryCatch(lm(formula = formula, data = trainingSet), error = function(e) e)
   
   if(checkModels(class_partition = class(partition_tree), class_neural = class(neural), class_linear = class(linear))){
@@ -149,7 +158,7 @@ performance.numeric <- function(predictions, predictionNames = c("linear", "part
 }
 #GENERIC FUNCTIONS
 
-#'test (generic)
+#'predict (generic)
 predict <- function(x, y){
   UseMethod("predict")
 }
@@ -201,11 +210,11 @@ predict.farseer.models <- function(models, newData){
     if(is.factor(pred$original)){
       levels <- levels(pred$original)
       perf <- performance.classification(predictions = pred,  cuttoff = levels[1])
-      farseer.rocplot(perf$performance, targetName = models$target)
+      perf[["plots"]] <- farseer.rocplot(perf$performance, targetName = models$target)
     }
     else{
       perf <- performance.classification(predictions = pred)
-      farseer.rocplot(perf$performance, targetName = models$target)
+      perf[["plots"]] <- farseer.rocplot(perf$performance, targetName = models$target)
     }
     pred_type <- "classification"
   }
@@ -216,9 +225,6 @@ predict.farseer.models <- function(models, newData){
 
 #generic function implementation
 
-plot.farseer.models <- function(obj){
-        
-}
 
 print.farseer.models <- function(obj){
         

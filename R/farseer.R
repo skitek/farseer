@@ -1,4 +1,4 @@
-#' farseer(function)
+#' farseer(S3-class)
 #' 
 #' Wrapper for easy usage of the farseer package. 
 #' 
@@ -29,13 +29,14 @@
 #' \describe{
 #'   \item{$models}{\code{\link{farseer.models}}}
 #'   \item{$data.frames}{\code{\link{farseer.data.frames}}}
+#'   \item{$test}{if tested, predictions, performance and plots are provided}
 #'  
 #'  \strong{If \code{additional_targets} are provided, a list:}
 #'  \describe{
-#'    \item{\code{$<dependant variable name>}}{list of models and data.frames as described above}
-#'    \item{\code{$<additional_targets[1]>}}{list of models and data.frames as described above, for first additional target}
+#'    \item{\code{$<dependant variable name>}}{list of models, data.frames and test as described above}
+#'    \item{\code{$<additional_targets[1]>}}{list of models, data.frames and test as described above, for first additional target}
 #'    \item{...}
-#'    \item{\code{$<additional_targets[n]>}}{list of models and data.frames as described above, for last additional target}
+#'    \item{\code{$<additional_targets[n]>}}{list of models, data.frames and test as described above, for last additional target}
 #'  }
 #'  }
 #' 
@@ -87,6 +88,7 @@ farseer <- function(formula = NULL, dataFrame, additional_targets = NULL, farsee
     predictions <- NULL
     farseerDataFrame <- farseer.data.frame(dataFrame = dataFrame, formula = formula, additional_targets)
     farseerModels <- farseer.models(farseerDataFrame = farseerDataFrame, ...)
+    predictions <- NULL
     if((test) & !is.null(farseerModels)){
       for(i in 1:length(farseerModels)){
          testingSet <-  farseerDataFrame$data[-farseerModels[[i]]$trainingVector, ]
@@ -94,10 +96,37 @@ farseer <- function(formula = NULL, dataFrame, additional_targets = NULL, farsee
          predictions[[farseerModels[[i]]$target]] <- prediction
       }
     }
+    value <- list(models = farseerModels, data.frame = farseerDataFrame, predictions = predictions)
+    attr(value, "class") <- "farseer"
+    if(is.null(value$predictions)){
+      print(plot.farseer(value))
+    }
+    return(value)
   }
   else{
     #farseerModels <- farseer.models(dataFrame, farseerModels, test)
   }
-  return(list(models = farseerModels, data.frame = farseerDataFrame, test = predictions))
+
 }
 
+plot.farseer <- function(obj){
+  roc_plot_list <- list()
+  roc_counter <- 1
+  ba_plot_list <- list()
+  ba_counter <- 1
+  for(i in 1:length(obj$predictions)){
+    if(obj$predictions[[i]]$prediction_type == "numeric"){
+      ba_plot_list[[ba_counter]] <- ggpubr::ggarrange(plotlist = obj$predictions[[i]]$performance$plots, nrow = 2, ncol = 2)
+      ba_counter <- ba_counter+1
+    }
+    else if(obj$predictions[[i]]$prediction_type == "classification"){
+      roc_plot_list[[roc_counter]] <- obj$predictions[[i]]$performance$plots
+      roc_counter <- roc_counter + 1
+    } 
+  }
+  roc_plots <- ggpubr::ggarrange(plotlist = roc_plot_list, nrow = 2, ncol = 2)
+  ba_plots <- ggpubr::ggarrange(plotlist = ba_plot_list, nrow = 1, ncol = 1)
+  #ba_plots <- ggpubr::annotate_figure(plots, top = ggpubr::text_grob(paste("Bland-Altman plot for: ", title), face = "bold", size = 14))
+  value <- ggpubr::ggarrange(plotlist = c(roc_plots, ba_plots))
+  return(value)
+}
