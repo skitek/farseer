@@ -111,10 +111,10 @@ farseer.bland.altmann <- function(predictions, targetName = "original", title = 
     colnames(plot_dataset) <- c("avg", "diff")
     plot <- ggplot2::ggplot(plot_dataset, ggplot2::aes(x = avg, y = diff))
     plots[[labels[x]]] <- plot + ggplot2::geom_point(alpha = 0.5) + ggplot2::geom_hline(yintercept = mean(plot_dataset$diff), colour = "blue", size = 0.5) + 
-            ggplot2::annotate("text", y = mean(plot_dataset$diff), x = max(plot_dataset$avg), label = round(mean(plot_dataset$diff), digits = 2), color = "blue", vjust = 1.2) + #adds the mean difference
+            ggplot2::annotate("text", y = mean(plot_dataset$diff), x = 0.9*max(plot_dataset$avg), label = round(mean(plot_dataset$diff), digits = 2), color = "blue", vjust = 1.2) + #adds the mean difference
             ggplot2::geom_hline(yintercept = mean(plot_dataset$diff) - (1.96 * sd(plot_dataset$diff)), colour = "red", size = 0.5) + #adds the -1.96SD line
             ggplot2::geom_hline(yintercept = mean(plot_dataset$diff) + (1.96 * sd(plot_dataset$diff)), colour = "red", size = 0.5) + #adds the -1.96SD line
-            ggplot2::ylab("Real - Predicted") + ggplot2::xlab("Average") + ggplot2::ggtitle(paste("Bland-Altmann for ", labels[x]))
+            ggplot2::ylab("Real - Predicted") + ggplot2::xlab("Average") + ggplot2::ggtitle(labels[x])
     yMAX <- max(yMAX, max(plot_dataset$diff), 1.96 * sd(plot_dataset$diff))
     yMIN <- min(yMIN, min(plot_dataset$diff), -1*(1.96 * sd(plot_dataset$diff)))
   }

@@ -159,7 +159,7 @@ performance.numeric <- function(predictions, predictionNames = c("linear", "part
 #GENERIC FUNCTIONS
 
 #'predict (generic)
-predict <- function(x, y){
+predict <- function(x, y, ...){
   UseMethod("predict")
 }
 
@@ -177,16 +177,17 @@ retrain.farseer.data.frame <- function(farseerDataFrame, formula, additional_tar
 #'
 #'@param models a farseer.models object with the trained models
 #'@param newData data to be used for predictions
+#'@param test if true, models will be tested and plots created
 #'
 #'@return data.frame with predictions for every model
 #'
-predict.farseer.models <- function(models, newData){
+predict.farseer.models <- function(models, newData, test = TRUE){
   linearPrediction <- predict.lm(models$linear, newData)
   partitionPrediction <- rpart.plot::rpart.predict(models$partition, newData)
   neuralPrediction <- neuralnet::compute(models$neural, newData)
   neuralPrediction <- neuralPrediction$net.result
   
-  if(is.factor(newData[,models$target])){
+  if(!is.null(dim(partitionPrediction))){
     #levels <- levels(newData[,models$target])
     #the second response column corresponds to values for the "higher" factor probability
     partitionPrediction <- partitionPrediction[,2]
@@ -195,12 +196,13 @@ predict.farseer.models <- function(models, newData){
     #neuralPrediction <- levels[max.col(neuralPrediction)]
   }
   
-  pred <- data.frame(original = newData[,models$target], linear = linearPrediction, partition = partitionPrediction, 
+  pred <- data.frame(linear = linearPrediction, partition = partitionPrediction, 
                       neural = neuralPrediction)
   
   #calculate performance
 #  trueValue <- newData[,models$target, drop = FALSE]
-  
+  if(test){
+  pred$original <- newData[,models$target]
   if(is.numeric(pred$original)){
     perf <- performance.numeric(predictions = pred)
     perf[["plots"]] <- farseer.bland.altmann(predictions = pred, title = models$target)
@@ -218,9 +220,13 @@ predict.farseer.models <- function(models, newData){
     }
     pred_type <- "classification"
   }
-  
   value <- list(predictions = pred, performance = perf, prediction_type = pred_type)
   return(value)
+  }
+  else{
+    value <- list(predictions = pred)
+    return(value)
+  }
 }
 
 #generic function implementation

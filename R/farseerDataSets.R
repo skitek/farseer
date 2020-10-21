@@ -26,6 +26,8 @@ farseer.data.frame <- function(dataFrame, formula, additional_targets = NULL){
         factors <- sapply(originalData[, model.variables], is.factor)
         #check, if data is either numeric or factors
         bad_columns <- colnames(originalData)
+        numerical_columns <- bad_columns[sapply(originalData, is.numeric)]
+        numerical_columns <- intersect(model.variables, numerical_columns)
         bad_columns <- bad_columns[!((sapply(originalData, is.factor) | sapply(originalData, is.numeric)))]
         if(length(bad_columns) != 0){
           stop("Data has to be either factors, logical, or numerical values, column/s [", bad_columns, "] is/are not")
@@ -42,6 +44,11 @@ farseer.data.frame <- function(dataFrame, formula, additional_targets = NULL){
         #select complete cases only
         originalData <- originalData[complete.cases(originalData),]
         
+        #save min/max values for each numerical column (used for simulation)
+        min <- lapply(originalData[, numerical_columns], min)
+        max <- lapply(originalData[, numerical_columns], max)
+        
+        
         #change all factors to 0,1 integers
         factorizedData <- factorize(originalData[, model.variables[factors]]) 
                                 
@@ -55,7 +62,8 @@ farseer.data.frame <- function(dataFrame, formula, additional_targets = NULL){
                      timestamp = creationDate, 
                      model.variables = model.variables, 
                      factor.variables = factors,
-                     target.variables = target.variables)
+                     target.variables = target.variables,
+                     maxmin = list(min = min, max = max))
         attr(value, "class") <- "farseer.data.frame"
         return(value)
 }
@@ -129,7 +137,7 @@ factorize.data.frame <- function(dataFrame){
 #' @export
 normalize.data.frame <- function(dataFrame){
         dataFrame <- as.data.frame(lapply(dataFrame, normalize.vector))
-        colnames(dataFrame) <- paste(colnames(dataFrame), "normalized", sep = "_")
+        #colnames(dataFrame) <- paste(colnames(dataFrame), "normalized", sep = "_")
         return(dataFrame)
 }
 

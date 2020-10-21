@@ -99,7 +99,7 @@ farseer <- function(formula = NULL, dataFrame, additional_targets = NULL, farsee
     value <- list(models = farseerModels, data.frame = farseerDataFrame, predictions = predictions)
     attr(value, "class") <- "farseer"
     if(is.null(value$predictions)){
-      print(plot.farseer(value))
+      plot.farseer(value)
     }
     return(value)
   }
@@ -111,22 +111,110 @@ farseer <- function(formula = NULL, dataFrame, additional_targets = NULL, farsee
 
 plot.farseer <- function(obj){
   roc_plot_list <- list()
-  roc_counter <- 1
+  #roc_counter <- 1
   ba_plot_list <- list()
-  ba_counter <- 1
+  #ba_counter <- 1
+  targetNames <- names(obj$predictions)
   for(i in 1:length(obj$predictions)){
     if(obj$predictions[[i]]$prediction_type == "numeric"){
-      ba_plot_list[[ba_counter]] <- ggpubr::ggarrange(plotlist = obj$predictions[[i]]$performance$plots, nrow = 2, ncol = 2)
-      ba_counter <- ba_counter+1
+      grobs = obj$predictions[[i]]$performance$plots
+      grobs$table <- gridExtra::tableGrob(round(obj$predictions[[i]]$performance$performance, 2))
+      finalPlot <- gridExtra::arrangeGrob(grobs = grobs, nrow = 2, ncol = 2, heights = c(1,1), widths = c(1,1))
+      finalPlot <- ggpubr::annotate_figure(finalPlot, top = ggpubr::text_grob(paste("Bland-Altman plots for ", names(obj$predictions[i]))))
+      ba_plot_list[[targetNames[i]]] <- gridExtra::grid.arrange(finalPlot)
+      #ba_counter <- ba_counter+1
     }
     else if(obj$predictions[[i]]$prediction_type == "classification"){
-      roc_plot_list[[roc_counter]] <- obj$predictions[[i]]$performance$plots
-      roc_counter <- roc_counter + 1
+      finalPlot <- obj$predictions[[i]]$performance$plots
+      annotation <- "AUC: "
+      annotationNames <- names(obj$predictions[[i]]$performance$auc)
+      for(j in 1:length(obj$predictions[[i]]$performance$auc)){
+        annotation = paste(annotation, annotationNames[j], 
+                           as.character(round(obj$predictions[[i]]$performance$auc[[j]]@y.values[[1]], 2)))
+      }
+      finalPlot <- ggpubr::annotate_figure(finalPlot, bottom = ggpubr::text_grob(annotation))
+      roc_plot_list[[targetNames[i]]] <- finalPlot
+      print(roc_plot_list[[targetNames[i]]])
+      #roc_counter <- roc_counter + 1
     } 
   }
-  roc_plots <- ggpubr::ggarrange(plotlist = roc_plot_list, nrow = 2, ncol = 2)
-  ba_plots <- ggpubr::ggarrange(plotlist = ba_plot_list, nrow = 1, ncol = 1)
+  value <- list();
+  value$performance_plots <- c(ba_plot_list, roc_plot_list)
+  plot.partition.models.farseer(obj)
+  #value <- gridExtra::arrangeGrob(grobs = c(roc_plot_list, ba_plot_list), nrow = round(no_plots/2), ncol = round(no_plots/3))
+  #ba_plots <- gridExtra::arrangeGrob(grobs = ba_plot_list)
   #ba_plots <- ggpubr::annotate_figure(plots, top = ggpubr::text_grob(paste("Bland-Altman plot for: ", title), face = "bold", size = 14))
-  value <- ggpubr::ggarrange(plotlist = c(roc_plots, ba_plots))
+  #value <- gridExtra::grid.arrange(roc_plots, ba_plots)
   return(value)
+}
+
+plot.partition.models.farseer <- function(fars){
+  modelNames <- names(fars$models)
+  value <- list()
+  for(i in 1:length(fars$models)){
+    value[[i]] <- rpart.plot::rpart.plot(fars$models[[i]]$partition, main = paste("Decision tree for ", modelNames[i]), roundint = FALSE)
+  }
+  names(value) <- modelNames
+  return(value)
+}
+
+#'farseer.simulate
+#'
+#'simulates all possible factor levels, and/or numerical data. In case of numerical data, values 0:1 with a difference of 0.1 will be generated,
+#'as to simulate wide range of normalized data. This behavior can be changed by setting range and difference parameter.
+#'
+#'@param fars a farseer object.
+#'@param newData a data.frame with data of the patients to be simulated. All variables have to be named exactly the same as in training set, 
+#'but newData can contain more variables. It is subsetted prior to evaluation.
+#'@param simulatFor a character vector of columns, for which values should be simulated
+#'@param models character vector which models should be used for prediction. If left NULL, all available models will be used.
+#'@param range range of values to be simulated for numeric values.
+#'@param difference <- difference between values in range
+#'
+#'@return data.frame with simulated and predicted values
+#'
+#'@export
+farseer.simulate <- function(fars, newData, simulateFor, modelNames = NULL, range = c(0,1), difference = 0.1){
+  modelVariables <- fars$data.frame$model.variables
+  newData <- newData[,modelVariables]
+  #prepare the dataset, normalizes numerical values using max and min values from training set
+  normalizeVector <- names(fars$data.frame$maxmin$max)
+  newData[,normalizeVector]   <- sweep(newData[,normalizeVector], 2, as.numeric(fars$data.frame$maxmin$min))
+  newData[,normalizeVector]   <- sweep(newData[,normalizeVector], 2, (as.numeric(fars$data.frame$maxmin$max) - as.numeric(fars$data.frame$maxmin$min)), 
+                                       FUN = "/")
+  #generate all possible combinations of simulated values
+  valuesList <- list()
+    for(j in 1:length(simulateFor)){
+      if(is.factor(newData[,simulateFor[j]])){
+        valuesList[[simulateFor[j]]] <- levels(newData[,simulateFor[j]])
+      }
+      else{
+        valuesList[[simulateFor[j]]] <- seq(range[1], range[2], difference)
+      }
+    }
+  dataset <- expand.grid(valuesList)
+  simnames <- do.call(paste, c(colnames(dataset), dataset, sep = "_"))
+  finalData <- data.frame()
+  caseNames <- rownames(newData)
+  for(i in 1:nrow(newData)){
+    columns <- setdiff(colnames(newData), colnames(dataset))
+    tempData <- dataset
+    tempData[,columns] <- newData[i, columns]
+    rownames(tempData) <- paste("Patient", caseNames[i], "sim", simnames, sep = "_")
+    finalData <- rbind(finalData, tempData)
+  }
+  rowna <- rownames(finalData)
+  finalData <- factorize.data.frame(finalData)
+  #finalData[,names(fars$data.frame$maxmin$max)]
+  if(is.null(modelNames)){
+      modelNames <- names(fars$models)
+  }
+  for(i in 1:length(modelNames)){
+    predictions <- predict(fars$models[[modelNames[i]]], finalData, test = FALSE)
+    predictions <- predictions$predictions
+    colnames(predictions) <- paste(colnames(predictions), modelNames[i], sep = "_")
+    finalData <- cbind(finalData, predictions)
+  }
+  rownames(finalData) <- rowna
+  return(finalData)
 }
