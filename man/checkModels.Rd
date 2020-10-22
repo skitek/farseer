@@ -6,9 +6,17 @@
 \usage{
 checkModels(class_partition, class_neural, class_linear)
 }
+\arguments{
+\item{class_partition}{class of partition model}
+
+\item{class_neural}{class of neural networks model}
+
+\item{class_linear}{class of linear model}
+}
 \value{
 boolean
 }
 \description{
-help function for checking, if models were created
+help function for checking, if models were created. If the classes
+are not as expected, FALSE is returned.
 }

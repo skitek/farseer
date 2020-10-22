@@ -9,9 +9,9 @@ farseer.bland.altmann(predictions, targetName = "original", title = NULL)
 \arguments{
 \item{predictions}{a data.frame containing predictions of the models and the target variable}
 
-\item{title}{title of plot}
+\item{targetName}{name of the column with measured data}
 
-\item{tartetName}{name of the column with measured data}
+\item{title}{title of plot}
 }
 \description{
 creates a bland-altmann plot for numeric predictions

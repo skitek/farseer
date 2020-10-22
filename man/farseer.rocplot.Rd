@@ -4,12 +4,14 @@
 \alias{farseer.rocplot}
 \title{farseer.rocplot (S3 function)}
 \usage{
-farseer.rocplot(performanceList, targetName, title = NULL)
+farseer.rocplot(performanceList, targetName = NULL, title = NULL)
 }
 \arguments{
-\item{predictions}{a data.frame containig predictions of the models}
+\item{performanceList}{a \link[ROCR]{performance-class} object containing "frp" and "tpr" performance of the models}
 
-\item{cutoff}{numeric value for labeling, all trueValues < cuttoff will be labeled 0, otherwise 1}
+\item{targetName}{name of the dependent variable}
+
+\item{title}{optional plot title}
 }
 \value{
 a roc plot

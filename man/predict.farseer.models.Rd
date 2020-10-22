@@ -4,12 +4,14 @@
 \alias{predict.farseer.models}
 \title{predict(farseer.models)}
 \usage{
-\method{predict}{farseer.models}(models, newData)
+\method{predict}{farseer.models}(models, newData, test = TRUE)
 }
 \arguments{
 \item{models}{a farseer.models object with the trained models}
 
 \item{newData}{data to be used for predictions}
+
+\item{test}{if true, models will be tested and plots created}
 }
 \value{
 data.frame with predictions for every model

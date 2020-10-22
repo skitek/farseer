@@ -8,6 +8,7 @@ create.farseer.models(
   farseerDataFrame,
   target,
   neural_max_threshold = 0.1,
+  trainingVector = NULL,
   ...
 )
 }
@@ -15,6 +16,12 @@ create.farseer.models(
 \item{farseerDataFrame}{a data for training (must be a farseer.data.frame)}
 
 \item{target}{an index of target from farseer.data.frame$target.variables}
+
+\item{neural_max_threshold}{double, maximum threshold to be used in neural networks training.}
+
+\item{trainingVector}{= NULL optionally a training vector can be provided}
+
+\item{...}{trainingFraction from \link{farseer.training.vector} how many cases should be a training set?}
 }
 \value{
 a farseer.models object

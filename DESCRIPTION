@@ -7,7 +7,19 @@ Authors@R:
            role = c("aut", "cre"),
            email = "skitek.kornel@gmail.com",
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+Description: farseer is a proof-of-concept package for easy machine learning
+             for clinicians.
+             It creates three models - linear, partition tree and neural network
+             for each dependand variable specified by calling farseer function.
+             Those models are automatically evaluated using bland-altman or roc curves, 
+             depending of the type of the target (numeric or factor). 
+             Please note that only two-level factors are currently supported.
+             Those evaluations can be visualized using generic plot() function.
+             An S3 farseer-class object is then created, which can be used for simulation
+             on new patient data.
+             The farseer.simulate does exactly that, it takes patient data, then simulates a variable
+             (for example: height, age or ASA score) and for all combinations of those
+             simulated variables calculates dependent variables using previously trained models.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
@@ -15,6 +27,8 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Imports: ROCR, 
          ggplot2, 
+         ggpubr,
+         gridExtra,
          neuralnet, 
          rpart, 
          rpart.plot

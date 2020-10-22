@@ -6,6 +6,13 @@
 \usage{
 farseer.models(farseerDataFrame, mode = "create", ...)
 }
+\arguments{
+\item{farseerDataFrame}{a farseer.data.set}
+
+\item{mode}{character, one of c("create", "retrain")}
+
+\item{...}{trainingFraction from \link{farseer.training.vector} how many cases should be a training set?}
+}
 \description{
 Container class for models trained with farseer-package.
 }

@@ -6,7 +6,7 @@
 \usage{
 performance.classification(
   predictions,
-  cuttoff = 1,
+  cutoff = 1,
   predictionNames = c("linear", "partition", "neural"),
   observed = "original"
 )
@@ -16,6 +16,10 @@ performance.classification(
 
 \item{cutoff}{numeric: value for labeling, all trueValues < cuttoff will be labeled 0, otherwise 1;
 non-numeric: if it is equal to cutoff, will be labeled 0, otherwise 1}
+
+\item{predictionNames}{= c("linear", "partition", "neural"), specifies, for what models should performance be calculated}
+
+\item{observed}{= "original" name of the variable containing real values}
 }
 \value{
 list \describe{

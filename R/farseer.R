@@ -1,17 +1,60 @@
+# Copyright (C) 2020 Kornel Skitek
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #' farseer(S3-class)
 #' 
 #' Wrapper for easy usage of the farseer package. 
 #' 
 #' It generates three models, a linear model, neural networks and partition tree 
 #' wrapped in an \code{\link{farseer.models}}-object. Those models can be then plotted using the generic \code{plot} function. 
-#' Additionally, the \code{\link{farseer.data.frames}} are also returned for further reference. 
-#' 
+#' Additionally, the \code{\link{farseer.data.frame}} are also returned for further reference. 
 #' 
 #' Dependent and independent variables can be either provided as formula, or if all variables should be used
 #' one can simply place the dependent variable as last variable in \code{dataFrame}. 
 #' If models should be created for more than one variable simultaneously, additional dependednt variables 
 #' can be specified. They will be excluded from \code{dataFrame} prior to training.
 #' 
+#' \preformatted{##Trains new models. Creates a formula using last variable 
+#' ##in data.frame as dependant variable 
+#' ##and all others as independent variables.
+#' models <- farseer(dataFrame, test = TRUE, ...)
+#' 
+#' ##Retrains models. Creates a formula using last variable 
+#' ##in data.frame as dependant variable 
+#' ##and all others as independent variables.
+#' models <- farseer(dataFrame, farseerModels, ...)
+#' 
+#' ##Trains new models according to formula.
+#' models <- farseer(formula, dataFrame, ...)
+#' 
+#' ##Retrains the models using new data. 
+#' models <- farseer(formula, dataFrame, farseerModels, ...)
+#' 
+#' ##Trains new models according to formula, then repeats the process for each variable
+#' ##specified in target_variables
+#' models <- farseer(formula, dataFrame, additional_targets = 
+#' c(<additional dependant variable names>), ...)
+#' 
+#' ##Trains new models, then repeats the process for each variable specified 
+#' ##in target_variables.
+#' ##Creates a formula using last variable in data.frame as dependant variable 
+#' ##and all others as independent variables, excluding variables specified 
+#' ##in target_variables
+#' models <- farseer(dataFrame, additional_targets = 
+#'                              c(<additional dependant variable names>))
+#' }
 #' @param formula a formula for building models. If it is omitted, a new formula will be created using
 #' last variable in data.frame as dependent variable and all others as independent variables.
 #' @param dataFrame a data.frame containing data to be used for training.
@@ -22,52 +65,28 @@
 #' if models for more then one dependand variable should be created. Note, that in current version separate models are 
 #' created. If all dependent variables are situated as last variables in the data.frame, farseer can be used without 
 #' providing formula, as it will be automatically created. 
-#' @param ... additional parameters for plotting. See \code{\link{plot.farseer.models}} for details.
+#' @param ... trainingFraction from \link{farseer.training.vector} how many cases should be a training set?
 #' 
 #' @return 
 #' \strong{If \code{additional_targets = NULL}, a list:}
 #' \describe{
 #'   \item{$models}{\code{\link{farseer.models}}}
-#'   \item{$data.frames}{\code{\link{farseer.data.frames}}}
+#'   \item{$data.frames}{\code{\link{farseer.data.frame}}}
 #'   \item{$test}{if tested, predictions, performance and plots are provided}
 #'  
 #'  \strong{If \code{additional_targets} are provided, a list:}
 #'  \describe{
 #'    \item{\code{$<dependant variable name>}}{list of models, data.frames and test as described above}
 #'    \item{\code{$<additional_targets[1]>}}{list of models, data.frames and test as described above, for first additional target}
-#'    \item{...}
+#'    \item{...}{further models}
 #'    \item{\code{$<additional_targets[n]>}}{list of models, data.frames and test as described above, for last additional target}
 #'  }
 #'  }
 #' 
-#' @usage 
-#' ##Trains new models. Creates a formula using last variable in data.frame as dependant variable 
-#' ##and all others as independent variables.
-#' models <- farseer(dataFrame)
-#' 
-#' ##Retrains models. Creates a formula using last variable in data.frame as dependant variable 
-#' ##and all others as independent variables.
-#' models <- farseer(dataFrame, farseerModels)
-#' 
-#' ##Trains new models according to formula.
-#' models <- farseer(formula, dataFrame)
-#' 
-#' ##Retrains the models using new data. 
-#' models <- farseer(formula, dataFrame, farseerModels)
-#' 
-#' ##Trains new models according to formula, then repeats the process for each variable
-#' ##specified in target_variables
-#' models <- farseer(formula, dataFrame, additional_targetc = c(<additional dependant variable names>))
-#' 
-#' ##Trains new models, then repeats the process for each variable specified in target_variables.
-#' ##Creates a formula using last variable in data.frame as dependant variable 
-#' ##and all others as independent variables, excluding variables specified in target_variables
-#' models <- farseer(dataFrame, additional_targetc = c(<additional dependant variable names>))
 #'  
 #' @export
-#' 
 farseer <- function(formula = NULL, dataFrame, additional_targets = NULL, farseerModels = NULL, test = TRUE, ...){
-  
+  disclaimer()
   #if no formula, create one
   if(is.null(formula)){
     if(is.null(additional_targets)){
@@ -109,7 +128,16 @@ farseer <- function(formula = NULL, dataFrame, additional_targets = NULL, farsee
 
 }
 
-plot.farseer <- function(obj){
+#'plot.farseer (function)
+#'
+#'Plots test results of a \link{farseer} object.
+#'
+#'@param obj a farseer
+#'@param plotPartition if TRUE, partition trees will also be plotted
+#'
+#'@export
+plot.farseer <- function(obj, plotPartition = TRUE){
+  disclaimer()
   roc_plot_list <- list()
   #roc_counter <- 1
   ba_plot_list <- list()
@@ -118,6 +146,9 @@ plot.farseer <- function(obj){
   for(i in 1:length(obj$predictions)){
     if(obj$predictions[[i]]$prediction_type == "numeric"){
       grobs = obj$predictions[[i]]$performance$plots
+      for(j in 1:length(grobs)){
+        grobs[[j]] <- grobs[[j]] + ggplot2::ggtitle(paste(LETTERS[j],": ", names(grobs)[j])) 
+      }
       grobs$table <- gridExtra::tableGrob(round(obj$predictions[[i]]$performance$performance, 2))
       finalPlot <- gridExtra::arrangeGrob(grobs = grobs, nrow = 2, ncol = 2, heights = c(1,1), widths = c(1,1))
       finalPlot <- ggpubr::annotate_figure(finalPlot, top = ggpubr::text_grob(paste("Bland-Altman plots for ", names(obj$predictions[i]))))
@@ -140,12 +171,14 @@ plot.farseer <- function(obj){
   }
   value <- list();
   value$performance_plots <- c(ba_plot_list, roc_plot_list)
+  if(plotPartition){
   plot.partition.models.farseer(obj)
+  }
   #value <- gridExtra::arrangeGrob(grobs = c(roc_plot_list, ba_plot_list), nrow = round(no_plots/2), ncol = round(no_plots/3))
   #ba_plots <- gridExtra::arrangeGrob(grobs = ba_plot_list)
   #ba_plots <- ggpubr::annotate_figure(plots, top = ggpubr::text_grob(paste("Bland-Altman plot for: ", title), face = "bold", size = 14))
   #value <- gridExtra::grid.arrange(roc_plots, ba_plots)
-  return(value)
+  #return(value)
 }
 
 plot.partition.models.farseer <- function(fars){
@@ -166,8 +199,8 @@ plot.partition.models.farseer <- function(fars){
 #'@param fars a farseer object.
 #'@param newData a data.frame with data of the patients to be simulated. All variables have to be named exactly the same as in training set, 
 #'but newData can contain more variables. It is subsetted prior to evaluation.
-#'@param simulatFor a character vector of columns, for which values should be simulated
-#'@param models character vector which models should be used for prediction. If left NULL, all available models will be used.
+#'@param simulateFor a character vector of columns, for which values should be simulated
+#'@param modelNames character vector which models should be used for prediction. If left NULL, all available models will be used.
 #'@param range range of values to be simulated for numeric values.
 #'@param difference <- difference between values in range
 #'
@@ -175,6 +208,7 @@ plot.partition.models.farseer <- function(fars){
 #'
 #'@export
 farseer.simulate <- function(fars, newData, simulateFor, modelNames = NULL, range = c(0,1), difference = 0.1){
+  disclaimer()
   modelVariables <- fars$data.frame$model.variables
   newData <- newData[,modelVariables]
   #prepare the dataset, normalizes numerical values using max and min values from training set
@@ -218,3 +252,37 @@ farseer.simulate <- function(fars, newData, simulateFor, modelNames = NULL, rang
   rownames(finalData) <- rowna
   return(finalData)
 }
+
+#' disclaimer (function)
+#' prints the disclaimer before usage of farseer or simulate
+disclaimer <- function(){
+  cat(" 
+    Copyright (C) 2020 Kornel Skitek
+    
+    This software was developed for research purposes, and its output
+    should be used with EXTREME CARE in clinical situations.
+    
+    All calculated values should be interpreted within the boundaries
+    and limitations of trained models.
+    
+    UNDER NO CIRCUMSTANCES is this software a medical product and 
+    no warranty is provided. See license for more details.
+    
+    Additionally, a standard disclaimer from GNU-GPL v. 3.0 applies:
+    
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    ")
+  readline(prompt = "Press any key to acknowledge ")
+}
+  

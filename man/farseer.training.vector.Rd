@@ -4,14 +4,7 @@
 \alias{farseer.training.vector}
 \title{farseer.training.vector (function)}
 \usage{
-##gets a psedo-random vector
-trainingVector <- farseer.training.vector(nrow(dataFrame))
-
-##smaller training fraction
-trainingVector <- farseer.training.vector(nrow(dataFrame), trainingFraction = 0.7)
-
-##set a seed
-trainingVector <- farseer.training.vector(nrow(dataFrame), seed = 123)
+farseer.training.vector(noOfCases, trainingFraction = 0.9, seed = NULL)
 }
 \arguments{
 \item{noOfCases}{integer, number of cases in a data.frame}
@@ -22,4 +15,14 @@ trainingVector <- farseer.training.vector(nrow(dataFrame), seed = 123)
 }
 \description{
 Gets a integer vector of case numbers for the training set
+}
+\details{
+##gets a psedo-random vector
+trainingVector <- farseer.training.vector(nrow(dataFrame))
+
+##smaller training fraction
+trainingVector <- farseer.training.vector(nrow(dataFrame), trainingFraction = 0.7)
+
+##set a seed
+trainingVector <- farseer.training.vector(nrow(dataFrame), seed = 123)
 }

@@ -13,7 +13,9 @@ performance.numeric(
 \arguments{
 \item{predictions}{data.frame with predictied and observed values}
 
-\item{predictionNames}{names of the columns, where predictions can be found}
+\item{predictionNames}{= c("linear", "partition", "neural"), specifies, for what models should performance be calculated}
+
+\item{observed}{= "original" name of the variable containing real values}
 }
 \value{
 list: \describe{

@@ -1,3 +1,18 @@
+# Copyright (C) 2020 Kornel Skitek
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #farseerModels - S3 class for storing trained models
 
 #' farseer.models (S3 class)
@@ -13,18 +28,21 @@
 #'  $partition \tab partition tree \cr
 #'  $neural \tab neural networks
 #'  }
-#' @params farseerDataSets a farseer.data.set
+#' @param farseerDataFrame a farseer.data.set
+#' @param mode character, one of c("create", "retrain")
+#' @param ... trainingFraction from \link{farseer.training.vector} how many cases should be a training set?
 #' 
 farseer.models <- function(farseerDataFrame, mode = "create", ...){
   if(mode == "create"){
     value <- models(farseerDataFrame, ...)
     }
   else if(mode == "retrain"){
-    value <- retrain(farseerDataFrame)
+    stop("not yet implemented")
   }
   else{
     stop("invalid mode argument")
   }
+  return(value)
 }
 
 #' create (farseer.models)
@@ -33,10 +51,13 @@ farseer.models <- function(farseerDataFrame, mode = "create", ...){
 #' 
 #' @param farseerDataFrame a data for training (must be a farseer.data.frame)
 #' @param target an index of target from farseer.data.frame$target.variables
+#' @param neural_max_threshold double, maximum threshold to be used in neural networks training.
+#' @param trainingVector = NULL optionally a training vector can be provided
+#' @param ... trainingFraction from \link{farseer.training.vector} how many cases should be a training set?
 #' 
 #' @returns a farseer.models object
 #' 
-create.farseer.models <- function(farseerDataFrame, target, neural_max_threshold = 0.1, ...){
+create.farseer.models <- function(farseerDataFrame, target, neural_max_threshold = 0.1, trainingVector = NULL, ...){
   if(!is.farseer.data.frame(farseerDataFrame) | !is.numeric(target)){
     stop("invalid parameters")
   }
@@ -48,7 +69,9 @@ create.farseer.models <- function(farseerDataFrame, target, neural_max_threshold
    formula <- createFormula(c(vector.normalized, farseerDataFrame$target.variables[target]))
   # formula_part <- createFormula(c(vector.part, farseerDataFrame$target.variables[target]))
   
-  trainingVector <- farseer.training.vector(nrow(farseerDataFrame$data), ...)
+  if(is.null(trainingVector)){
+    trainingVector <- farseer.training.vector(nrow(farseerDataFrame$data), ...)
+  }
   trainingSet <- farseerDataFrame$data[trainingVector,]
   partition_tree <- tryCatch(rpart::rpart(formula = formula, data = trainingSet), error = function(e) e)
   'train neural networks'
@@ -75,7 +98,11 @@ create.farseer.models <- function(farseerDataFrame, target, neural_max_threshold
 
 #'checkModels(S3 function)
 #'
-#'help function for checking, if models were created
+#'help function for checking, if models were created. If the classes
+#'are not as expected, FALSE is returned.
+#'@param class_partition class of partition model
+#'@param class_neural class of neural networks model
+#'@param class_linear class of linear model
 #'
 #'@return boolean
 checkModels <- function(class_partition, class_neural, class_linear){
@@ -96,6 +123,8 @@ checkModels <- function(class_partition, class_neural, class_linear){
 #'@param predictions a data.frame containing predictions of the models and original data
 #'@param cutoff numeric: value for labeling, all trueValues < cuttoff will be labeled 0, otherwise 1; 
 #'non-numeric: if it is equal to cutoff, will be labeled 0, otherwise 1
+#'@param predictionNames = c("linear", "partition", "neural"), specifies, for what models should performance be calculated
+#'@param observed = "original" name of the variable containing real values
 #'
 #'@return 
 #'list \describe{
@@ -104,14 +133,13 @@ checkModels <- function(class_partition, class_neural, class_linear){
 #'\item{auc}{a list of \link[ROCR]{performance-class} objects for every model;performance is called with "auc" option}
 #'}
 #'
-#'@export
-performance.classification <- function(predictions, cuttoff = 1, predictionNames = c("linear", "partition", "neural"), observed = "original"){
+performance.classification <- function(predictions, cutoff = 1, predictionNames = c("linear", "partition", "neural"), observed = "original"){
   #create labels
-  if(is.numeric(cuttoff)){
-      predictions$labels <- ifelse(predictions$original < cuttoff, 0, 1)
+  if(is.numeric(cutoff)){
+      predictions$labels <- ifelse(predictions$original < cutoff, 0, 1)
   }
   else {
-      predictions$labels <- ifelse(predictions$original == cuttoff, 0, 1)
+      predictions$labels <- ifelse(predictions$original == cutoff, 0, 1)
   }
   #create predictions
   predictionsList <- list()
@@ -136,8 +164,8 @@ performance.classification <- function(predictions, cuttoff = 1, predictionNames
 #'Additionally calculates the correlations.
 #'
 #'@param predictions data.frame with predictied and observed values
-#'@param predictionNames names of the columns, where predictions can be found
-#'
+#'@param predictionNames = c("linear", "partition", "neural"), specifies, for what models should performance be calculated
+#'@param observed = "original" name of the variable containing real values
 #'@return 
 #'list: \describe{
 #'\item{errors}{data.frame with measured, predicted, absolute and relative errors for all models}
@@ -158,18 +186,6 @@ performance.numeric <- function(predictions, predictionNames = c("linear", "part
 }
 #GENERIC FUNCTIONS
 
-#'predict (generic)
-predict <- function(x, y, ...){
-  UseMethod("predict")
-}
-
-
-retrain.farseer.data.frame <- function(farseerDataFrame, formula, additional_targets, farseerModels){
-  return("dummy retrain")
-}
-
-
-#new generic functions
 
 #'predict(farseer.models)
 #'
@@ -211,7 +227,7 @@ predict.farseer.models <- function(models, newData, test = TRUE){
   else{
     if(is.factor(pred$original)){
       levels <- levels(pred$original)
-      perf <- performance.classification(predictions = pred,  cuttoff = levels[1])
+      perf <- performance.classification(predictions = pred,  cutoff = levels[1])
       perf[["plots"]] <- farseer.rocplot(perf$performance, targetName = models$target)
     }
     else{
@@ -233,9 +249,9 @@ predict.farseer.models <- function(models, newData, test = TRUE){
 
 
 print.farseer.models <- function(obj){
-        
+  print("not yet implemented")    
 }
 
 summary.farseer.models <- function(obj){
-        
+  print("not yet implemented")       
 }
