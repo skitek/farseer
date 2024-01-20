@@ -80,7 +80,7 @@ create.farseer.models <- function(farseerDataFrame, target, neural_max_threshold
   neural <- NULL
   while((class(neural) != "nn") & (threshold <= neural_max_threshold)){
   print(paste("Training for ", farseerDataFrame$target.variables[target], "run: ", as.character(counter), " with threshold", as.character(threshold)));
-  neural <- tryCatch(neuralnet::neuralnet(formula = formula, data = trainingSet, hidden = 5, lifesign = 'minimal', stepmax = 5e+05, threshold = threshold), error = function(e) e, warning = function(w) w) #neural network is created
+  neural <- tryCatch(neuralnet::neuralnet(formula = formula, data = trainingSet, hidden = 5, lifesign = 'minimal', stepmax = 5e+05, threshold = threshold), error = function(e){return(NA)}, warning = function(w){return(NA)}) #neural network is created
   threshold <- threshold + 0.01
   counter <- counter+1
   }

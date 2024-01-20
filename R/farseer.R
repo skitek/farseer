@@ -136,7 +136,7 @@ farseer <- function(formula = NULL, dataFrame, additional_targets = NULL, farsee
 #'@param plotPartition if TRUE, partition trees will also be plotted
 #'
 #'@export
-plot.farseer <- function(obj, plotPartition = TRUE){
+farseer.plot <- function(obj, plotPartition = TRUE){
   disclaimer()
   roc_plot_list <- list()
   #roc_counter <- 1
